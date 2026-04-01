@@ -69,22 +69,60 @@
   ss
 )
 
+(defun ec16--z-cap-crest ( r_out x y )
+  ;; Tube axis ±X: OD crest z²+y²=r_out² → z=√(r²−y²) (no +Y branch on cap; x unused).
+  (sqrt (max 0.0 (- (* r_out r_out) (* y y))))
+)
+
+(defun ec16--fill-flat-to-cap-od ( r_out bx0 bx1 by0 by1 z_top bite nx ny
+                                  / dx dy ix iy x0 x1 y0 y1 z00 z01 z10 z11 zlo ss e )
+  ;; Match tconnector-16cf clip/OD fill: min crest Z at cell corners + 2D grid (midpoint Y-strips can leave slivers).
+  (setq dx (/ (- bx1 bx0) (float nx)))
+  (setq dy (/ (- by1 by0) (float ny)))
+  (setq ss nil)
+  (setq ix 0)
+  (while (< ix nx)
+    (setq x0 (+ bx0 (* ix dx)))
+    (setq x1 (+ x0 dx))
+    (setq iy 0)
+    (while (< iy ny)
+      (setq y0 (+ by0 (* iy dy)))
+      (setq y1 (+ y0 dy))
+      (setq z00 (ec16--z-cap-crest r_out x0 y0))
+      (setq z01 (ec16--z-cap-crest r_out x0 y1))
+      (setq z10 (ec16--z-cap-crest r_out x1 y0))
+      (setq z11 (ec16--z-cap-crest r_out x1 y1))
+      (setq zlo (- (min z00 (min z01 (min z10 z11))) bite))
+      (if (> (- z_top zlo) 1e-4)
+        (progn
+          (command "._BOX" "_non" (list x0 y0 zlo) "_non" (list x1 y1 z_top))
+          (setq e (entlast))
+          (if ss (ssadd e ss) (setq ss (ssadd e)))
+        )
+      )
+      (setq iy (1+ iy))
+    )
+    (setq ix (1+ ix))
+  )
+  ss
+)
+
 (defun ec16--add-usb-clip ( r_out depth leg / clip_h clip_w_lr clip_fb
                             rail_th back_th gw hx_w hy_w overlap side_bite
                             bx0 bx1 by0 by1 rail_x_out_l rail_x_out_r pad_x0 pad_x1
                             z_r0 z_r1 z_back0 z_back1 x_clip
-                            main eb el er clip sfill fill_u
+                            main eb el er clip sfill fill_u fill_bite z_fill_top
                             tab_in tab_z tab_y_half y_t0 y_t1 z_t0 etab_l etab_r
                             tab_bottom_in tab_bottom_y y_b0 y_b1 z_b0 z_b1 etab_bl etab_br
                             merged ssm )
   ;; x_clip centers clip on cap along tube axis: PX cap [0..depth], NX cap [−depth..0].
-  (setq clip_h       18.0)
+  (setq clip_h       12.75)
   (setq clip_w_lr    18.0)
-  (setq clip_fb      12.75)
+  (setq clip_fb      21.0)
   (setq rail_th      2.0)
   (setq back_th      2.0)
-  (setq overlap      0.35)
-  (setq side_bite    0.25)
+  (setq overlap      0.55)
+  (setq side_bite    0.4)
   (setq tab_in       0.6)
   (setq tab_z        1.8)
   (setq tab_y_half    1.5)
@@ -126,7 +164,9 @@
   (command "._UNION" ssm "")
   (setq clip (entlast))
 
-  (setq sfill (ec16--fill-flat-to-horizontal-od r_out pad_x0 pad_x1 by0 by1 z_back0 overlap 28))
+  (setq fill_bite (+ overlap 0.22))
+  (setq z_fill_top (+ z_back0 0.25))
+  (setq sfill (ec16--fill-flat-to-cap-od r_out pad_x0 pad_x1 by0 by1 z_fill_top fill_bite 26 26))
   (if sfill
     (progn
       (command "._UNION" sfill "")

@@ -59,23 +59,65 @@
   ss
 )
 
+(defun tcf16--z-t-crest ( r_out x y / zh zy )
+  ;; +Z outer envelope at (x,y): horizontal legs √(r²−y²); +Y leg (y≥0) also √(r²−x²) — take max.
+  (setq zh (sqrt (max 0.0 (- (* r_out r_out) (* y y)))))
+  (if (< y 0.0)
+    zh
+    (max zh (sqrt (max 0.0 (- (* r_out r_out) (* x x)))))
+  )
+)
+
+(defun tcf16--fill-flat-to-t-union-od ( r_out bx0 bx1 by0 by1 z_top bite nx ny
+                                      / dx dy ix iy x0 x1 y0 y1 z00 z01 z10 z11 zlo ss e )
+  ;; Use min crest Z over cell corners so box floor never sits above the true surface (midpoint sampling leaves sliver voids).
+  (setq dx (/ (- bx1 bx0) (float nx)))
+  (setq dy (/ (- by1 by0) (float ny)))
+  (setq ss nil)
+  (setq ix 0)
+  (while (< ix nx)
+    (setq x0 (+ bx0 (* ix dx)))
+    (setq x1 (+ x0 dx))
+    (setq iy 0)
+    (while (< iy ny)
+      (setq y0 (+ by0 (* iy dy)))
+      (setq y1 (+ y0 dy))
+      (setq z00 (tcf16--z-t-crest r_out x0 y0))
+      (setq z01 (tcf16--z-t-crest r_out x0 y1))
+      (setq z10 (tcf16--z-t-crest r_out x1 y0))
+      (setq z11 (tcf16--z-t-crest r_out x1 y1))
+      (setq zlo (- (min z00 (min z01 (min z10 z11))) bite))
+      (if (> (- z_top zlo) 1e-4)
+        (progn
+          (command "._BOX" "_non" (list x0 y0 zlo) "_non" (list x1 y1 z_top))
+          (setq e (entlast))
+          (if ss (ssadd e ss) (setq ss (ssadd e)))
+        )
+      )
+      (setq iy (1+ iy))
+    )
+    (setq ix (1+ ix))
+  )
+  ss
+)
+
 (defun tcf16--add-usb-clip ( r_out depth / clip_h clip_w_lr clip_fb
                             rail_th back_th gw hx_w hy_w overlap side_bite
                             bx0 bx1 by0 by1 rail_x_out_l rail_x_out_r pad_x0 pad_x1
                             z_r0 z_r1 z_back0 z_back1
-                            main eb el er clip sfill fill_u
+                            main eb el er clip sfill fill_u fill_bite z_fill_top
                             tab_in tab_z tab_y_half y_t0 y_t1 z_t0 etab_l etab_r
                             tab_bottom_in tab_bottom_y y_b0 y_b1 z_b0 z_b1 etab_bl etab_br
                             merged ssm )
   ;; Flat top z=r_out; OD fill + pad_x use full rail outer X (rails stick out past ±hx_w); side_bite extends ±Y into shell.
-  (setq clip_h       18.0)   ;; +2 mm rail height (z_r1); room for features / tabs
+  (setq clip_h       12.75)   ;; +2 mm rail height (z_r1); room for features / tabs
   (setq clip_w_lr    18.0)
-  (setq clip_fb      12.75)   ;; +2 mm vs prior so inward tabs don’t net-reduce Y clearance in gap
+  (setq clip_fb      21.0)   ;; +2 mm vs prior so inward tabs don’t net-reduce Y clearance in gap
   (setq rail_th      2.0)
   (setq back_th      2.0)
   ;; Into tube shell: overlap (Z) + side_bite (Y) help rails/pad UNION; rails’ outer X exceeds ±hx_w — pad/fill span rail_x_out_*.
-  (setq overlap      0.35)
-  (setq side_bite    0.25)
+  (setq overlap      0.55)
+  (setq side_bite    0.4)
   ;; Retention tabs: inward from inner rail faces toward gap; clip_fb widened +2 mm to compensate in Y.
   (setq tab_in       0.6)
   (setq tab_z        1.8)
@@ -121,8 +163,10 @@
   (command "._UNION" ssm "")
   (setq clip (entlast))
 
-  ;; Bridge flat clip base to round horizontal OD (same X span as pad so rail side “wings” are filled to OD).
-  (setq sfill (tcf16--fill-flat-to-horizontal-od r_out pad_x0 pad_x1 by0 by1 z_back0 overlap 28))
+  ;; Bridge to T union OD: corner-based z_lo + extra bite into shell; z_fill_top slightly into pad for clean UNION.
+  (setq fill_bite (+ overlap 0.22))
+  (setq z_fill_top (+ z_back0 0.25))
+  (setq sfill (tcf16--fill-flat-to-t-union-od r_out pad_x0 pad_x1 by0 by1 z_fill_top fill_bite 26 26))
   (if sfill
     (progn
       (command "._UNION" sfill "")
