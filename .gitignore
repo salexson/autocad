@@ -1,0 +1,26 @@
+# AutoCAD / BricsCAD — lock, backup, autosave
+*.bak
+*.dwl
+*.dwl2
+*.sv$
+*.ac$
+
+# Optional: compiled AutoLISP
+*.fas
+*.vlx
+
+# Local drawings / exports (repo tracks .lsp source; force-add with git add -f if needed)
+*.dwg
+*.dwt
+*.dxf
+*.stl
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editor / misc backups
+*~
+*.swp
+*.tmp

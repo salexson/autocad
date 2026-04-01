@@ -1,6 +1,5 @@
-;;; sleeve-bracket-16.lsp
-;;; THIS FILE ONLY (no copy): C:/Users/Steven Alexson/Code/autocad/sleeve-bracket-16.lsp
-;;; In AutoCAD run: (load "C:/Users/Steven Alexson/Code/autocad/sleeve-bracket-16.lsp")
+;;; sleeve-bracket-16cf.lsp
+;;; Path: automation-radio-tree/sleeve-bracket-16cf.lsp (APPLOAD or load with your full path).
 ;;; build: 2026-04-01 - WCS build: sleeve axis +Y, bracket on +X; then ROTATE3D about WCS Y through origin (default 90 deg;
 ;;; Z-up WCS: built +X toward -Z = bracket under tube). Use 270 for bracket on +Z (top). Override: (setq sb16-rotate-y-deg <deg>).
 ;;; Bracket backplate along sleeve; centered on sleeve length.
@@ -217,5 +216,5 @@
   (princ)
 )
 
-(princ "\nLoaded: automation-radio-tree/sleeve-bracket-16.lsp | SB16 | build +Y/+X then ROTATE3D about WCS Y (default 90 deg, bracket -Z) ")
+(princ "\nLoaded: automation-radio-tree/sleeve-bracket-16cf.lsp | SB16 | build +Y/+X then ROTATE3D about WCS Y (default 90 deg, bracket -Z) ")
 (princ)

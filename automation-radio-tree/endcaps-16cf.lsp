@@ -3,7 +3,7 @@
 ;;; Clip orientation: tube axis ±X; slot opens +Z. Outer end closed with a solid plug; clip centered on cap in X and Y.
 ;;; AutoCAD 2012+ — CYLINDER + BOX booleans only (no COM).
 ;;;
-;;; APPLOAD this file (with or without tconnector-16cf.lsp). Command: EC16
+;;; APPLOAD this file (with or without t-connector-16cf.lsp). Command: EC16
 ;;;
 ;;; Geometry matches c:TCF16: Socket ID 16.2 mm, wall 3 mm -> OD 22.2 mm.
 
